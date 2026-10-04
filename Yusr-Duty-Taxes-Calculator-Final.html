@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Yusr Duty/Taxes Calculator By ALiRao</title>
+<style>
+  :root {
+    --ink: #172033;
+    --muted: #5c6b80;
+    --line: #d7dee8;
+    --bg: #eef2f6;
+    --card: #ffffff;
+    --navy: #16324f;
+    --accent: #1f6feb;
+    --green: #0f7a45;
+    --red: #b42318;
+    --soft: #f6f8fb;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", Calibri, Arial, sans-serif; color: var(--ink); background: var(--bg); }
+  header { background: #fff; border-bottom: 1px solid var(--line); padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: .04em; }
+  header p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+  .actions { display: flex; gap: 8px; align-items: center; }
+  button, .audit-toggle { border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 8px; padding: 8px 12px; font: inherit; cursor: pointer; }
+  button.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .audit-toggle { display: flex; gap: 8px; align-items: center; font-weight: 600; }
+  .audit-toggle input { width: 16px; height: 16px; }
+  .audit-toggle.on { background: #e8f6ee; border-color: #9dccb0; color: var(--green); }
+  nav { max-width: 1180px; margin: 16px auto 0; padding: 0 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+  nav button { background: #fff; }
+  nav button.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  nav button:disabled { opacity: .45; cursor: not-allowed; }
+  main { max-width: 1180px; margin: 12px auto 32px; padding: 0 16px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  h2 { margin: 0 0 14px; font-size: 18px; border-bottom: 3px solid var(--accent); display: inline-block; padding-bottom: 4px; }
+  label.field { display: block; margin: 12px 0 6px; font-size: 13px; font-weight: 600; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  input[type="number"], input[type="text"], select { width: 100%; border: 1px solid #c9d3df; border-radius: 8px; padding: 9px 10px; font: inherit; background: #fff; }
+  input:disabled { background: #f1f4f8; color: #8a97a8; }
+  .unit { min-width: 72px; text-align: center; color: var(--muted); font-size: 13px; }
+  .choice { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-top: 6px; background: var(--soft); }
+  .choice label { display: flex; gap: 8px; align-items: center; margin: 6px 0; font-size: 14px; }
+  .hint { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
+  .rate { display: grid; grid-template-columns: 170px 1fr 28px; gap: 8px; align-items: center; margin: 7px 0; }
+  .metric { display: flex; justify-content: space-between; gap: 12px; border: 1px solid var(--line); background: var(--soft); border-radius: 8px; padding: 9px 12px; margin: 8px 0; }
+  .metric b { font-variant-numeric: tabular-nums; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+  th { background: var(--navy); color: #fff; text-align: left; padding: 8px; font-weight: 600; }
+  td { border-bottom: 1px solid var(--line); padding: 8px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.total td { background: var(--navy); color: #fff; font-weight: 700; border: 0; }
+  .short { color: var(--red); font-weight: 700; }
+  .excess { color: var(--green); font-weight: 700; }
+  .note { color: var(--muted); font-size: 12px; margin-top: 12px; line-height: 1.45; }
+  .banner { background: #e8f6ee; border: 1px solid #9dccb0; color: #146c3e; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; }
+  .rao {
+    display: inline-block;
+    margin-left: 3px;
+    padding: 1px 7px 2px;
+    background: #0a66c2;
+    color: #fff;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.2;
+    vertical-align: 1px;
+  }
+  .credit { max-width: 1180px; margin: 0 auto 24px; padding: 0 16px; color: var(--muted); font-size: 12px; }
+  .print-sheet { display: none; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } header { flex-direction: column; align-items: flex-start; } }
+  @media print {
+    @page { size: A4 portrait; margin: 8mm; }
+    body { background: #fff; }
+    header, nav, main, .actions, .credit { display: none !important; }
+    .print-sheet { display: block; font-size: 11px; color: #000; }
+    .print-sheet .rao { background: #0a66c2; color: #fff; border-radius: 3px; padding: 0 5px; font-weight: 700; }
+    .print-sheet .sub { margin: 2px 0 8px; font-size: 10px; }
+    .print-sheet table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    .print-sheet th, .print-sheet td { border: 1px solid #bbb; padding: 3px 5px; }
+    .print-sheet th { background: #16324f; color: #fff; }
+    .print-sheet td.num, .print-sheet th.num { text-align: right; }
+    .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 16px; margin-bottom: 6px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Yusr Duty/Taxes Calculator By ALi<span class="rao">Rao</span></h1>
+    <p>Paid assessment first. Audit locks it, then revises the rates.</p>
+  </div>
+  <div class="actions">
+    <label class="audit-toggle" id="auditLabel"><input type="checkbox" id="audit" /> Audit</label>
+    <button type="button" id="sample">Load sample GD</button>
+    <button type="button" id="clear">Clear</button>
+    <button type="button" class="primary" onclick="window.print()">Print</button>
+  </div>
+</header>
+<nav>
+  <button type="button" class="tab active" data-tab="paid">1. Paid calculation</button>
+  <button type="button" class="tab" data-tab="snapshot" id="tabSnapshot" disabled>2. Paid duty / taxes</button>
+  <button type="button" class="tab" data-tab="compare" id="tabCompare" disabled>3. Audited calculation</button>
+  <button type="button" class="tab" data-tab="diff" id="tabDiff" disabled>4. Difference</button>
+</nav>
+<main>
+  <div class="panel active" id="paid">
+    <div class="grid">
+      <section>
+        <h2>Inputs</h2>
+        <label class="field" for="invoice">Invoice / assessed value</label>
+        <div class="row">
+          <input id="invoice" type="number" min="0" step="0.01" value="0" />
+          <input id="currency" type="text" value="USD" maxlength="6" style="max-width:88px" />
+        </div>
+        <p class="hint">Freight is already included. Do not add it again.</p>
+        <label class="field">Insurance</label>
+        <div class="choice">
+          <label><input type="radio" name="ins" value="percent" checked /> 1% of invoice / assessed value</label>
+          <label><input type="radio" name="ins" value="fixed" /> Fixed amount</label>
+          <div class="row"><input id="insFixed" type="number" min="0" step="0.01" value="0" disabled /><span class="unit" id="insUnit">USD</span></div>
+        </div>
+        <label class="field">Landing charges</label>
+        <div class="choice">
+          <label><input type="radio" name="lc" value="percent" checked /> 1% of (invoice / assessed value + insurance)</label>
+          <label><input type="radio" name="lc" value="fixed" /> Fixed amount</label>
+          <div class="row"><input id="lcFixed" type="number" min="0" step="0.01" value="0" disabled /><span class="unit" id="lcUnit">USD</span></div>
+        </div>
+        <label class="field" for="rate">Exchange rate (PKR per 1 foreign unit)</label>
+        <input id="rate" type="number" min="0" step="0.0001" value="0" />
+        <label class="field">Paid rates (%)</label>
+        <div id="rates"></div>
+        <label class="field" for="otherBase">Other levy base</label>
+        <select id="otherBase">
+          <option value="duty">Same as duties (import value PKR)</option>
+          <option value="st">Same as sales tax (import value + duties)</option>
+          <option value="it">Same as income tax (import value + duties + ST + AST)</option>
+        </select>
+      </section>
+      <section>
+        <h2>Paid assessment</h2>
+        <div class="metric"><span>Insurance</span><b id="mIns">0.00</b></div>
+        <div class="metric"><span>Landing charges</span><b id="mLc">0.00</b></div>
+        <div class="metric"><span>Import value (foreign currency)</span><b id="mFc">0.00</b></div>
+        <div class="metric"><span>Import value (PKR)</span><b id="mPkr">0.00</b></div>
+        <table>
+          <thead><tr><th>Duty / tax</th><th class="num">Rate %</th><th class="num">Amount (PKR)</th><th class="num">Rounded</th></tr></thead>
+          <tbody id="paidBody"></tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+
+  <div class="panel" id="snapshot">
+    <section>
+      <div class="banner" id="snapBanner">Paid duty and taxes saved. These figures stay fixed while you revise the audit rates.</div>
+      <div class="grid">
+        <div>
+          <div class="metric"><span>Insurance</span><b id="sIns">—</b></div>
+          <div class="metric"><span>Landing charges</span><b id="sLc">—</b></div>
+          <div class="metric"><span>Import value (FC)</span><b id="sFc">—</b></div>
+          <div class="metric"><span>Import value (PKR)</span><b id="sPkr">—</b></div>
+        </div>
+        <table>
+          <thead><tr><th>Duty / tax</th><th class="num">Paid rate %</th><th class="num">Paid amount</th><th class="num">Rounded</th></tr></thead>
+          <tbody id="snapBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="panel" id="compare">
+    <div class="grid">
+      <section>
+        <h2>Audited rates</h2>
+        <p class="hint">Value, insurance, landing charges and exchange rate stay as paid. Change only the rates found in audit.</p>
+        <div id="auditRates"></div>
+        <label class="field" for="auditOtherBase">Other levy base</label>
+        <select id="auditOtherBase">
+          <option value="duty">Same as duties (import value PKR)</option>
+          <option value="st">Same as sales tax (import value + duties)</option>
+          <option value="it">Same as income tax (import value + duties + ST + AST)</option>
+        </select>
+      </section>
+      <section>
+        <h2>Paid against audited</h2>
+        <table>
+          <thead>
+            <tr><th>Duty / tax</th><th class="num">Paid rate</th><th class="num">Paid amount</th><th class="num">Audit rate</th><th class="num">Audit amount</th></tr>
+          </thead>
+          <tbody id="compareBody"></tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+
+  <div class="panel" id="diff">
+    <section>
+      <h2>Difference</h2>
+      <p class="hint">Short levy means the audit amount is higher than the amount paid. Excess means the importer paid more than the audited amount.</p>
+      <table>
+        <thead>
+          <tr><th>Duty / tax</th><th class="num">Paid</th><th class="num">Audited</th><th class="num">Difference</th><th>Result</th></tr>
+        </thead>
+        <tbody id="diffBody"></tbody>
+      </table>
+    </section>
+  </div>
+</main>
+<p class="credit">Yusr Duty/Taxes Calculator By ALi<span class="rao">Rao</span> · Appraising Officer (muhammadalicustoms@gmail.com)</p>
+<div class="print-sheet" id="printSheet"></div>
+<script>
+const LEVIES = [
+  { key: "cd", name: "Customs Duty" },
+  { key: "acd", name: "Additional Customs Duty" },
+  { key: "rd", name: "Regulatory Duty" },
+  { key: "fed", name: "Federal Excise Duty" },
+  { key: "add", name: "Anti Dumping Duty" },
+  { key: "st", name: "Sales Tax" },
+  { key: "ast", name: "Additional Sales Tax" },
+  { key: "it", name: "Income Tax" },
+  { key: "other", name: "Other" }
+];
+const money = (n, d = 2) => (Number.isFinite(n) ? n : 0).toLocaleString("en-PK", { minimumFractionDigits: d, maximumFractionDigits: d });
+const num = id => { const v = parseFloat(document.getElementById(id).value); return Number.isFinite(v) ? v : 0; };
+const radio = name => document.querySelector(`input[name="${name}"]:checked`).value;
+let paidSnap = null;
+
+function rateRow(prefix, key, name) {
+  if (key === "other") {
+    return `<div class="rate"><input id="${prefix}otherName" type="text" value="Other" aria-label="Other levy name" /><input id="${prefix}r-other" type="number" min="0" step="0.01" value="0" /><span>%</span></div>`;
+  }
+  return `<div class="rate"><span>${name}</span><input id="${prefix}r-${key}" type="number" min="0" step="0.01" value="0" /><span>%</span></div>`;
+}
+document.getElementById("rates").innerHTML = LEVIES.map(l => rateRow("", l.key, l.name)).join("");
+document.getElementById("auditRates").innerHTML = LEVIES.map(l => rateRow("a-", l.key, l.name)).join("");
+
+function rateInputs(scope) {
+  return [...document.querySelectorAll(scope + " input[type='number']")];
+}
+["invoice", "insFixed", "lcFixed", "rate"].forEach(id => {
+  const input = document.getElementById(id);
+  input.addEventListener("focus", () => {
+    if (input.value === "0" || input.value === "0.00" || input.value === "0.0000") input.value = "";
+    input.select();
+  });
+  input.addEventListener("blur", () => {
+    if (input.value.trim() === "") input.value = "0";
+    if (!document.getElementById("audit").checked) renderPaid();
+  });
+});
+["#rates", "#auditRates"].forEach(scope => {
+  rateInputs(scope).forEach(input => {
+    input.addEventListener("focus", () => {
+      if (input.value === "0" || input.value === "0.00") input.value = "";
+      input.select();
+    });
+    input.addEventListener("blur", () => {
+      if (input.value.trim() === "") input.value = "0";
+      if (document.getElementById("audit").checked) renderAudit();
+      else renderPaid();
+    });
+    input.addEventListener("keydown", event => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      const inputs = rateInputs(scope);
+      const next = inputs[inputs.indexOf(input) + 1];
+      if (next) next.focus();
+      else input.blur();
+    });
+  });
+});
+
+function syncModes() {
+  document.getElementById("insFixed").disabled = radio("ins") !== "fixed";
+  document.getElementById("lcFixed").disabled = radio("lc") !== "fixed";
+  const ccy = (document.getElementById("currency").value || "FC").trim() || "FC";
+  document.getElementById("insUnit").textContent = ccy;
+  document.getElementById("lcUnit").textContent = ccy;
+  const locked = document.getElementById("audit").checked;
+  document.querySelectorAll("#paid input, #paid select").forEach(el => { if (el.id !== "audit") el.disabled = locked && el.type !== "radio" ? true : locked; });
+  if (!locked) {
+    document.getElementById("insFixed").disabled = radio("ins") !== "fixed";
+    document.getElementById("lcFixed").disabled = radio("lc") !== "fixed";
+  }
+}
+
+function compute(prefix, baseId) {
+  const invoice = num("invoice");
+  const ccy = (document.getElementById("currency").value || "FC").trim() || "FC";
+  const insurance = radio("ins") === "percent" ? invoice * 0.01 : num("insFixed");
+  const landing = radio("lc") === "percent" ? (invoice + insurance) * 0.01 : num("lcFixed");
+  const fc = invoice + insurance + landing;
+  const pkr = fc * num("rate");
+  const rates = {};
+  LEVIES.forEach(l => { rates[l.key] = num(prefix + "r-" + l.key); });
+  const dutyKeys = ["cd", "acd", "rd", "fed"];
+  const amounts = {};
+  let duties = 0;
+  dutyKeys.forEach(k => { amounts[k] = pkr * rates[k] / 100; duties += amounts[k]; });
+  amounts.add = pkr * rates.add / 100;
+  const stBase = pkr + duties;
+  amounts.st = stBase * rates.st / 100;
+  amounts.ast = stBase * rates.ast / 100;
+  const itBase = stBase + amounts.st + amounts.ast;
+  amounts.it = itBase * rates.it / 100;
+  const otherBaseName = document.getElementById(baseId).value;
+  const otherBase = otherBaseName === "st" ? stBase : otherBaseName === "it" ? itBase : pkr;
+  amounts.other = otherBase * rates.other / 100;
+  const total = duties + amounts.add + amounts.st + amounts.ast + amounts.it + amounts.other;
+  const otherName = (document.getElementById(prefix + "otherName").value || "Other").trim() || "Other";
+  return { ccy, insurance, landing, fc, pkr, rates, amounts, total, otherName };
+}
+
+function rows(result, withRate) {
+  const lines = LEVIES.map(l => {
+    const name = l.key === "other" ? result.otherName : l.name;
+    const amt = result.amounts[l.key];
+    return `<tr><td>${name}</td>${withRate ? `<td class="num">${money(result.rates[l.key])}</td>` : ""}<td class="num">${money(amt)}</td><td class="num">${money(Math.round(amt), 0)}</td></tr>`;
+  }).join("");
+  return lines + `<tr class="total"><td>TOTAL</td>${withRate ? "<td></td>" : ""}<td class="num">${money(result.total)}</td><td class="num">${money(Math.round(result.total), 0)}</td></tr>`;
+}
+
+function renderPaid() {
+  syncModes();
+  const paid = compute("", "otherBase");
+  document.getElementById("mIns").textContent = money(paid.insurance) + " " + paid.ccy;
+  document.getElementById("mLc").textContent = money(paid.landing) + " " + paid.ccy;
+  document.getElementById("mFc").textContent = money(paid.fc) + " " + paid.ccy;
+  document.getElementById("mPkr").textContent = money(paid.pkr) + " PKR";
+  document.getElementById("paidBody").innerHTML = rows(paid, true);
+  if (document.getElementById("audit").checked && paidSnap) renderAudit();
+}
+
+function savePaid() {
+  paidSnap = compute("", "otherBase");
+  LEVIES.forEach(l => {
+    document.getElementById("a-r-" + l.key).value = document.getElementById("r-" + l.key).value || "0";
+  });
+  document.getElementById("a-otherName").value = document.getElementById("otherName").value || "Other";
+  document.getElementById("auditOtherBase").value = document.getElementById("otherBase").value;
+  document.getElementById("sIns").textContent = money(paidSnap.insurance) + " " + paidSnap.ccy;
+  document.getElementById("sLc").textContent = money(paidSnap.landing) + " " + paidSnap.ccy;
+  document.getElementById("sFc").textContent = money(paidSnap.fc) + " " + paidSnap.ccy;
+  document.getElementById("sPkr").textContent = money(paidSnap.pkr) + " PKR";
+  document.getElementById("snapBody").innerHTML = rows(paidSnap, true);
+  ["tabSnapshot", "tabCompare", "tabDiff"].forEach(id => document.getElementById(id).disabled = false);
+}
+
+function renderAudit() {
+  if (!paidSnap) return;
+  const audited = compute("a-", "auditOtherBase");
+  audited.otherName = (document.getElementById("a-otherName").value || "Other").trim() || "Other";
+  const compare = LEVIES.map(l => {
+    const name = l.key === "other" ? audited.otherName : l.name;
+    return `<tr><td>${name}</td><td class="num">${money(paidSnap.rates[l.key])}</td><td class="num">${money(paidSnap.amounts[l.key])}</td><td class="num">${money(audited.rates[l.key])}</td><td class="num">${money(audited.amounts[l.key])}</td></tr>`;
+  }).join("") + `<tr class="total"><td>TOTAL</td><td></td><td class="num">${money(paidSnap.total)}</td><td></td><td class="num">${money(audited.total)}</td></tr>`;
+  document.getElementById("compareBody").innerHTML = compare;
+  const diffRows = LEVIES.map(l => {
+    const name = l.key === "other" ? audited.otherName : l.name;
+    const diff = audited.amounts[l.key] - paidSnap.amounts[l.key];
+    const label = Math.abs(diff) < 0.005 ? "No difference" : diff > 0 ? "Short levy" : "Excess paid";
+    const cls = diff > 0.005 ? "short" : diff < -0.005 ? "excess" : "";
+    return `<tr><td>${name}</td><td class="num">${money(paidSnap.amounts[l.key])}</td><td class="num">${money(audited.amounts[l.key])}</td><td class="num ${cls}">${money(diff)}</td><td class="${cls}">${label}</td></tr>`;
+  }).join("");
+  const totalDiff = audited.total - paidSnap.total;
+  const totalLabel = Math.abs(totalDiff) < 0.005 ? "No difference" : totalDiff > 0 ? "Short levy" : "Excess paid";
+  const totalCls = totalDiff > 0.005 ? "short" : totalDiff < -0.005 ? "excess" : "";
+  document.getElementById("diffBody").innerHTML = diffRows + `<tr class="total"><td>TOTAL</td><td class="num">${money(paidSnap.total)}</td><td class="num">${money(audited.total)}</td><td class="num">${money(totalDiff)}</td><td>${totalLabel}</td></tr>`;
+}
+
+document.getElementById("audit").addEventListener("change", () => {
+  const on = document.getElementById("audit").checked;
+  document.getElementById("auditLabel").classList.toggle("on", on);
+  if (on) {
+    savePaid();
+    renderPaid();
+    show("compare");
+  } else {
+    paidSnap = null;
+    ["tabSnapshot", "tabCompare", "tabDiff"].forEach(id => document.getElementById(id).disabled = true);
+    show("paid");
+    renderPaid();
+  }
+});
+
+function show(tab) {
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  document.getElementById(tab).classList.add("active");
+}
+document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => { if (!b.disabled) show(b.dataset.tab); }));
+document.body.addEventListener("input", () => {
+  if (document.getElementById("audit").checked) renderAudit();
+  else renderPaid();
+});
+document.getElementById("sample").addEventListener("click", () => {
+  if (document.getElementById("audit").checked) document.getElementById("audit").click();
+  document.getElementById("invoice").value = "300000";
+  document.getElementById("currency").value = "USD";
+  document.querySelector('input[name="ins"][value="fixed"]').checked = true;
+  document.getElementById("insFixed").value = "125";
+  document.querySelector('input[name="lc"][value="percent"]').checked = true;
+  document.getElementById("rate").value = "177.2";
+  ["cd", "acd", "rd", "fed", "add", "ast", "other"].forEach(k => document.getElementById("r-" + k).value = "0");
+  document.getElementById("r-st").value = "10";
+  document.getElementById("r-it").value = "1";
+  renderPaid();
+});
+document.getElementById("clear").addEventListener("click", () => {
+  if (document.getElementById("audit").checked) document.getElementById("audit").click();
+  document.querySelectorAll("#paid input[type='number']").forEach(el => el.value = "0");
+  document.querySelector('input[name="ins"][value="percent"]').checked = true;
+  document.querySelector('input[name="lc"][value="percent"]').checked = true;
+  document.getElementById("currency").value = "USD";
+  document.getElementById("otherName").value = "Other";
+  renderPaid();
+});
+function fillPrint() {
+  const paid = document.getElementById("audit").checked && paidSnap ? paidSnap : compute("", "otherBase");
+  const audited = document.getElementById("audit").checked ? compute("a-", "auditOtherBase") : null;
+  const facts = [
+    ["Invoice / assessed value", money(num("invoice")) + " " + paid.ccy],
+    ["Insurance", money(paid.insurance) + " " + paid.ccy],
+    ["Landing charges", money(paid.landing) + " " + paid.ccy],
+    ["Import value (FC)", money(paid.fc) + " " + paid.ccy],
+    ["Exchange rate", money(num("rate"), 4)],
+    ["Import value (PKR)", money(paid.pkr)]
+  ].map(([k, v]) => `<div><b>${k}:</b> ${v}</div>`).join("");
+  let table;
+  if (audited) {
+    const body = LEVIES.map(l => {
+      const name = l.key === "other" ? audited.otherName : l.name;
+      const diff = audited.amounts[l.key] - paid.amounts[l.key];
+      const label = Math.abs(diff) < 0.005 ? "No difference" : diff > 0 ? "Short levy" : "Excess paid";
+      return `<tr><td>${name}</td><td class="num">${money(paid.rates[l.key])}</td><td class="num">${money(paid.amounts[l.key])}</td><td class="num">${money(audited.rates[l.key])}</td><td class="num">${money(audited.amounts[l.key])}</td><td class="num">${money(diff)}</td><td>${label}</td></tr>`;
+    }).join("");
+    const totalDiff = audited.total - paid.total;
+    table = `<table><thead><tr><th>Duty / tax</th><th class="num">Paid rate</th><th class="num">Paid</th><th class="num">Audit rate</th><th class="num">Audited</th><th class="num">Difference</th><th>Result</th></tr></thead><tbody>${body}<tr><td><b>TOTAL</b></td><td></td><td class="num"><b>${money(paid.total)}</b></td><td></td><td class="num"><b>${money(audited.total)}</b></td><td class="num"><b>${money(totalDiff)}</b></td><td><b>${Math.abs(totalDiff) < 0.005 ? "No difference" : totalDiff > 0 ? "Short levy" : "Excess paid"}</b></td></tr></tbody></table>`;
+  } else {
+    const body = LEVIES.map(l => {
+      const name = l.key === "other" ? paid.otherName : l.name;
+      return `<tr><td>${name}</td><td class="num">${money(paid.rates[l.key])}</td><td class="num">${money(paid.amounts[l.key])}</td><td class="num">${money(Math.round(paid.amounts[l.key]), 0)}</td></tr>`;
+    }).join("");
+    table = `<table><thead><tr><th>Duty / tax</th><th class="num">Rate %</th><th class="num">Amount (PKR)</th><th class="num">Rounded</th></tr></thead><tbody>${body}<tr><td><b>TOTAL</b></td><td></td><td class="num"><b>${money(paid.total)}</b></td><td class="num"><b>${money(Math.round(paid.total), 0)}</b></td></tr></tbody></table>`;
+  }
+  document.getElementById("printSheet").innerHTML = `<h1>Yusr Duty/Taxes Calculator By ALi<span class="rao">Rao</span></h1><div class="sub">Appraising Officer (muhammadalicustoms@gmail.com)</div><div class="facts">${facts}</div>${table}`;
+}
+window.addEventListener("beforeprint", fillPrint);
+renderPaid();
+</script>
+</body>
+</html>
+stener("beforeprint", fillPrint);
+renderPaid();
+</script>
+</body>
+</html>
